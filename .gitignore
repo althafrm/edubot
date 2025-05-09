@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# SQLite database
+*.db
+
+# Learning memory
+learn.json
+
+# Flask cache and environment files
+.env
+*.env
+
+# Logs and temp
+*.log
+*.tmp
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# PyInstaller build folders
+build/
+dist/
+*.spec
+
+# Virtual environment
+venv/
+ENV/
+env/
+
+# VS Code settings (optional)
+.vscode/
