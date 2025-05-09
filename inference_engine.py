@@ -1,20 +1,146 @@
-import json
-import sqlite3
 import re
-import string
+import random
+import sqlite3
+import nltk
+from nltk.stem import WordNetLemmatizer
+from datetime import datetime
 
+nltk.download('punkt', quiet=True)
+nltk.download('wordnet', quiet=True)
+
+lemmatizer = WordNetLemmatizer()
 DB_PATH = "database/knowledge.db"
-LEARN_FILE = "learn.json"
 
+# Synonym mapping
+SYNONYMS = {
+    "register": ["enroll", "join", "apply", "sign up"],
+    "course": ["module", "subject", "program", "degree"],
+    "computer science": ["comp sci", "cs", "cs course"],
+    "hello": ["hi", "hey", "greetings"],
+    "thanks": ["thank you", "cheers"],
+    "bye": ["goodbye", "see you"]
+}
+
+# Build reverse synonym lookup
+def build_synonym_lookup(synonyms):
+    mapping = {}
+    for key, values in synonyms.items():
+        for word in values + [key]:
+            mapping[word] = key
+    return mapping
+
+SYN_LOOKUP = build_synonym_lookup(SYNONYMS)
+
+# Small talk responses
+SMALLTALK = {
+    "hello": ["Hello there!", "Hi, how can I help you?", "Greetings!"],
+    "how are you": ["I'm great!", "Doing well. How can I assist you?", "I'm fine, thank you!"],
+    "who are you": ["I'm EduBot, your course assistant."],
+    "bye": ["Goodbye!", "See you soon!", "Take care!"],
+    "thanks": ["You're welcome!", "No problem!", "Happy to help!"],
+    "ok": ["Great!", "Okay then.", "Understood."]
+}
+
+# Normalize and canonicalize input
+def normalize_input(user_input):
+    user_input = user_input.lower()
+    user_input = re.sub(r"[^\w\s]", "", user_input)
+
+    # Replace full phrases before splitting
+    for phrase in sorted(SYN_LOOKUP, key=lambda x: -len(x.split())):
+        if phrase in user_input:
+            user_input = user_input.replace(phrase, SYN_LOOKUP[phrase])
+
+    words = user_input.split()
+    canonical = [SYN_LOOKUP.get(lemmatizer.lemmatize(w), lemmatizer.lemmatize(w)) for w in words]
+    return " ".join(canonical)
+
+# Generate answer for user input
+def get_answer(user_input):
+    norm = normalize_input(user_input)
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Check learned data
+    cursor.execute("SELECT answer FROM learned WHERE question = ?", (norm,))
+    row = cursor.fetchone()
+    if row:
+        return row[0]
+
+    # Check small talk
+    for phrase, responses in SMALLTALK.items():
+        if phrase in norm:
+            return random.choice(responses)
+
+    # Check static knowledge
+    cursor.execute("SELECT answer FROM knowledge WHERE question = ?", (norm,))
+    row = cursor.fetchone()
+    if row:
+        return row[0]
+
+    # Special case: enrollment intent + course
+    enroll_keywords = ["enroll", "join", "register", "apply"]
+    course_keywords = ["course", "computer science", "engineering", "business", "psychology", "graphic"]
+
+    if any(k in norm for k in enroll_keywords):
+        if any(k in norm for k in course_keywords):
+            return "To enroll in that course, please visit our admissions page or contact the registrar."
+        return "To enroll, please visit our admissions page or contact the registrar."
+
+    # Special case: course listing
+    if "course" in norm:
+        cursor.execute("SELECT name FROM courses")
+        rows = cursor.fetchall()
+        course_list = [r[0] for r in rows]
+        return "Our available courses are:\n- " + "\n- ".join(course_list)
+
+    conn.close()
+
+    # Fallback
+    return random.choice([
+        "Hmm, I’m not sure about that yet.",
+        "Can you try asking in a different way?",
+        "I'm still learning. Could you rephrase?"
+    ])
+
+# Learn a new Q&A
+def learn(question, answer):
+    norm = normalize_input(question)
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO learned (question, answer, timestamp) VALUES (?, ?, ?)",
+                   (norm, answer, datetime.now().isoformat()))
+    conn.commit()
+    conn.close()
+
+# Initialize database on first run
 def init_database():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+
+    # Create tables
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS courses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS knowledge (
+            question TEXT PRIMARY KEY,
+            answer TEXT NOT NULL
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS learned (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question TEXT NOT NULL,
+            answer TEXT NOT NULL,
+            timestamp TEXT
+        )
+    ''')
+
+    # Seed data
     cursor.execute('SELECT COUNT(*) FROM courses')
     if cursor.fetchone()[0] == 0:
         cursor.executemany("INSERT INTO courses (name) VALUES (?)", [
@@ -22,80 +148,18 @@ def init_database():
             ("Business Management",),
             ("Psychology",),
             ("Engineering",),
-            ("Graphic Design",),
+            ("Graphic Design",)
         ])
+
+    cursor.execute('SELECT COUNT(*) FROM knowledge')
+    if cursor.fetchone()[0] == 0:
+        cursor.executemany("INSERT INTO knowledge (question, answer) VALUES (?, ?)", [
+            ("what is ai", "AI stands for Artificial Intelligence."),
+            ("what is education", "Education is the process of acquiring knowledge.")
+        ])
+
     conn.commit()
     conn.close()
 
+# Run initializer immediately
 init_database()
-
-def load_learned_data():
-    try:
-        with open(LEARN_FILE, 'r') as f:
-            return json.load(f)
-    except:
-        return {}
-
-def save_learned_data(data):
-    with open(LEARN_FILE, 'w') as f:
-        json.dump(data, f, indent=2)
-
-def get_db_courses():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT name FROM courses")
-    rows = cursor.fetchall()
-    conn.close()
-    return [r[0] for r in rows]
-
-def preprocess(text):
-    text = text.lower()
-    text = text.replace("what's", "what is")
-    text = text.replace("whats", "what is")
-    text = text.replace("can't", "cannot")
-    text = text.replace("won't", "will not")
-    text = text.translate(str.maketrans('', '', string.punctuation))
-    return text.strip()
-
-def process_input(user_input):
-    raw_input = user_input
-    user_input = preprocess(user_input)
-
-    if raw_input.lower().startswith("add:"):
-        try:
-            _, pair = raw_input.split("add:", 1)
-            question, answer = pair.split("=", 1)
-            question = preprocess(question.strip())
-            answer = answer.strip()
-            learned = load_learned_data()
-            learned[question] = answer
-            save_learned_data(learned)
-            return "Learned successfully!"
-        except:
-            return "Invalid format. Use: Add: What is AI? = Artificial Intelligence"
-
-    learned = load_learned_data()
-
-    for key in learned:
-        if preprocess(key) == user_input:
-            return learned[key]
-
-    if re.search(r'course|degree|offer', user_input):
-        return "We offer: " + ", ".join(get_db_courses())
-
-    elif re.search(r'how.*(apply|join|enroll|register)', user_input):
-        return "To join a course, please visit our admissions page and submit your application form."
-
-    elif "deadline" in user_input:
-        return "The application deadline is June 30."
-
-    elif "requirement" in user_input:
-        return "You need at least 3 A-levels or equivalent qualifications."
-
-    elif "hello" in user_input or "hi" in user_input:
-        return "Hello! How can I assist you with your education queries?"
-
-    elif "thank" in user_input:
-        return "You're welcome!"
-
-    return "Sorry, I don't understand that. You can teach me using: Add: question = answer"
