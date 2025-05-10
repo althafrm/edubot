@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EduBot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f2f2f2;
+            padding: 2rem;
+            font-family: 'Segoe UI';
+        }
+
+        .chat-box {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .msg {
+            margin: 10px 0;
+            display: flex;
+        }
+
+        .user {
+            justify-content: flex-end;
+        }
+
+        .bot {
+            justify-content: flex-start;
+        }
+
+        .msg-content {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 20px;
+        }
+
+        .user .msg-content {
+            background-color: #cce5ff;
+        }
+
+        .bot .msg-content {
+            background-color: #e2ffe2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-box" id="chatBox">
+        <h4 class="text-center">🎓 EduBot – Education Counselor</h4>
+
+        {% for sender, message in chat %}
+        <div class="msg {{ sender }}">
+            <div class="msg-content">{{ message }}</div>
+        </div>
+        {% endfor %}
+
+        <div id="chat-messages"></div>
+
+        <form class="mt-3 d-flex" onsubmit="return handleSubmit(event)">
+            <input id="userInput" class="form-control me-2" placeholder="Type a message..." autocomplete="off">
+            <button type="submit" class="btn btn-primary">Send</button>
+        </form>
+
+        <hr>
+
+        <div class="mb-2">
+            <input id="teachQ" class="form-control mb-1" placeholder="Teach me – question">
+            <input id="teachA" class="form-control mb-2" placeholder="Teach me – answer">
+            <button class="btn btn-success w-100" onclick="teachBot()">Teach Bot</button>
+        </div>
+
+        <button class="btn btn-outline-danger w-100 mt-2" onclick="resetChat()">Reset Chat</button>
+
+    </div>
+
+    <script>
+        async function resetChat() {
+            const res = await fetch("/reset", {
+                method: "POST"
+            });
+            if (res.ok) {
+                document.getElementById("chat-messages").innerHTML = "";
+            }
+        }
+
+        function appendMessage(sender, message) {
+            const div = document.createElement("div");
+            div.className = `msg ${sender}`;
+            div.innerHTML = `<div class="msg-content">${message}</div>`;
+            document.getElementById("chat-messages").appendChild(div);
+            document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
+        }
+
+        async function sendMessage(text) {
+            appendMessage("user", text);
+
+            const res = await fetch("/ask", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: text })
+            });
+
+            const data = await res.json();
+            appendMessage("bot", data.reply);
+        }
+
+        function handleSubmit(event) {
+            event.preventDefault();
+            const input = document.getElementById("userInput");
+            const text = input.value.trim();
+            if (!text) return;
+            sendMessage(text);
+            input.value = "";
+        }
+
+        async function teachBot() {
+            const q = document.getElementById("teachQ").value.trim();
+            const a = document.getElementById("teachA").value.trim();
+            if (!q || !a) return;
+
+            appendMessage("user", q);
+
+            const res = await fetch("/teach", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ question: q, answer: a })
+            });
+
+            const data = await res.json();
+            appendMessage("bot", data.reply);
+
+            document.getElementById("teachQ").value = "";
+            document.getElementById("teachA").value = "";
+        }
+
+        window.onload = function () {
+            document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
+        };
+    </script>
+</body>
+
+</html>
