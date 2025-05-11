@@ -33,3 +33,6 @@ env/
 
 # VS Code settings (optional)
 .vscode/
+
+# ML model weights
+*.pth

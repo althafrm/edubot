@@ -1,11 +1,11 @@
-from flask import Flask, request, render_template, session, jsonify
-from inference_engine import get_answer, learn
+from flask import Flask, render_template, request, jsonify, session
+from inference_engine import get_answer
 
 app = Flask(__name__)
-app.secret_key = "edubot_secret_key"
+app.secret_key = "edubot_secret"
 
 @app.route("/")
-def index():
+def home():
     if "chat" not in session:
         session["chat"] = []
     return render_template("index.html", chat=session["chat"])
@@ -14,36 +14,17 @@ def index():
 def ask():
     if "chat" not in session:
         session["chat"] = []
-
-    data = request.json
-    user_input = data.get("message", "").strip()
-
+    user_input = request.json.get("message", "").strip()
     if not user_input:
-        return jsonify({"error": "Empty message"}), 400
-
-    bot_response = get_answer(user_input)
+        return jsonify({"reply": "Please type something."})
+    reply = get_answer(user_input)
     session["chat"].append(("user", user_input))
-    session["chat"].append(("bot", bot_response))
+    session["chat"].append(("bot", reply))
     session.modified = True
-    return jsonify({"reply": bot_response})
-
-@app.route("/teach", methods=["POST"])
-def teach():
-    data = request.json
-    question = data.get("question", "").strip()
-    answer = data.get("answer", "").strip()
-
-    if not question or not answer:
-        return jsonify({"error": "Missing question or answer"}), 400
-
-    learn(question, answer)
-    session["chat"].append(("user", question))
-    session["chat"].append(("bot", "Thanks! I've learned that."))
-    session.modified = True
-    return jsonify({"reply": "Thanks! I've learned that."})
+    return jsonify({"reply": reply})
 
 @app.route("/reset", methods=["POST"])
-def reset_chat():
+def reset():
     session.pop("chat", None)
     return jsonify({"success": True})
 

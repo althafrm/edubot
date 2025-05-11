@@ -1,0 +1,230 @@
+{
+    "intents": [
+        {
+            "tag": "greeting",
+            "patterns": [
+                "Hi",
+                "Hello",
+                "Hey",
+                "How are you",
+                "Good day",
+                "What's up",
+                "Greetings",
+                "Hi there",
+                "Hey there"
+            ],
+            "responses": [
+                "Hello!",
+                "Hi there, how can I help?",
+                "Good to see you!",
+                "Greetings!"
+            ]
+        },
+        {
+            "tag": "goodbye",
+            "patterns": [
+                "Bye",
+                "Goodbye",
+                "See you later",
+                "Cya",
+                "Take care",
+                "Talk to you soon",
+                "Farewell"
+            ],
+            "responses": [
+                "Goodbye!",
+                "Talk to you later!",
+                "See you next time!",
+                "Take care!"
+            ]
+        },
+        {
+            "tag": "thanks",
+            "patterns": [
+                "Thanks",
+                "Thank you",
+                "That's helpful",
+                "Thanks a lot",
+                "Cheers",
+                "Much appreciated"
+            ],
+            "responses": [
+                "You're welcome!",
+                "Happy to help!",
+                "Anytime!",
+                "No problem at all!"
+            ]
+        },
+        {
+            "tag": "course_list",
+            "patterns": [
+                "What courses do you offer?",
+                "List courses",
+                "Show all degrees",
+                "Available degrees",
+                "What degree programs do you have?",
+                "Can I see your courses?",
+                "Which courses are offered?"
+            ],
+            "responses": [
+                "We offer: Computer Science, Business Management, Psychology, Engineering, Graphic Design."
+            ]
+        },
+        {
+            "tag": "enroll",
+            "patterns": [
+                "How can I enroll?",
+                "How to register?",
+                "Join the course",
+                "Enroll in Computer Science",
+                "I want to sign up",
+                "Where do I apply?",
+                "Can I join the course?",
+                "Enrollment info"
+            ],
+            "responses": [
+                "To enroll, please visit our admissions page or contact the registrar."
+            ]
+        },
+        {
+            "tag": "interest_matching",
+            "patterns": [
+                "I'm interested in design",
+                "I like technology",
+                "I enjoy business",
+                "I'm good at psychology",
+                "Interested in programming",
+                "I prefer creative work",
+                "I want to work in tech",
+                "I'm into people and behavior"
+            ],
+            "responses": [
+                "If you're into technology, consider Computer Science or Engineering.",
+                "For business interests, Business Management is a great choice.",
+                "Graphic Design is ideal if you love creativity and visuals.",
+                "Psychology may suit you if you're curious about the human mind."
+            ]
+        },
+        {
+            "tag": "identity",
+            "patterns": [
+                "Who are you?",
+                "What is your name?",
+                "Are you a bot?",
+                "Introduce yourself"
+            ],
+            "responses": [
+                "I'm EduBot, your course assistant.",
+                "I'm EduBot here to help you with courses."
+            ]
+        },
+        {
+            "tag": "wellbeing",
+            "patterns": [
+                "How are you?",
+                "How's it going?",
+                "How do you feel?",
+                "Are you okay?"
+            ],
+            "responses": [
+                "I'm great, thanks for asking!",
+                "Doing well. How can I assist you?",
+                "I'm fine, how can I help?"
+            ]
+        },
+        {
+            "tag": "help",
+            "patterns": [
+                "What can you do?",
+                "How do I use this bot?",
+                "Help me",
+                "Can you assist me?",
+                "How can you help?"
+            ],
+            "responses": [
+                "I can help you explore courses, enrollment info, and match your interests to suitable programs."
+            ]
+        },
+        {
+            "tag": "contact_info",
+            "patterns": [
+                "How can I contact admissions?",
+                "Where can I get help?",
+                "How to reach support?",
+                "Contact details?"
+            ],
+            "responses": [
+                "You can contact our admissions team via the website contact form or visit our campus reception."
+            ]
+        },
+        {
+            "tag": "unknown",
+            "patterns": [],
+            "responses": [
+                "Sorry, I didn\u2019t understand that. Could you rephrase?",
+                "Hmm, I\u2019m not sure I follow.",
+                "Can you say that differently?"
+            ]
+        },
+        {
+            "tag": "modules_computer_science",
+            "patterns": [
+                "What will I learn in Computer Science?",
+                "Modules in Computer Science",
+                "Subjects for CS",
+                "Topics in Computer Science course"
+            ],
+            "responses": [
+                "In Computer Science, you'll study modules such as Data Structures, Algorithms, Artificial Intelligence, Databases, and Web Development."
+            ]
+        },
+        {
+            "tag": "modules_business_management",
+            "patterns": [
+                "What will I learn in Business Management?",
+                "Modules in Business",
+                "Subjects for Business Management",
+                "Topics in Business Management course"
+            ],
+            "responses": [
+                "Business Management includes modules like Marketing, Finance, Leadership, Organizational Behavior, and Strategic Management."
+            ]
+        },
+        {
+            "tag": "modules_psychology",
+            "patterns": [
+                "What will I learn in Psychology?",
+                "Modules in Psychology",
+                "Subjects in Psychology course",
+                "Topics covered in Psychology"
+            ],
+            "responses": [
+                "Psychology includes Cognitive Psychology, Developmental Psychology, Mental Health, Neuroscience, and Research Methods."
+            ]
+        },
+        {
+            "tag": "modules_engineering",
+            "patterns": [
+                "What will I learn in Engineering?",
+                "Modules in Engineering",
+                "Subjects in Engineering course",
+                "Engineering topics"
+            ],
+            "responses": [
+                "Engineering includes modules like Mechanics, Thermodynamics, Electrical Systems, Materials Science, and Design Engineering."
+            ]
+        },
+        {
+            "tag": "modules_graphic_design",
+            "patterns": [
+                "What will I learn in Graphic Design?",
+                "Modules in Graphic Design",
+                "Subjects in Design course",
+                "Topics in Graphic Design"
+            ],
+            "responses": [
+                "Graphic Design includes modules such as Typography, Digital Illustration, Branding, Motion Graphics, and User Interface Design."
+            ]
+        }
+    ]
+}
