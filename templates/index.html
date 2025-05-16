@@ -4,12 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <title>EduBot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
             background: #f2f2f2;
             padding: 2rem;
             font-family: 'Segoe UI';
+            transition: background 0.3s, color 0.3s;
         }
 
         .chat-box {
@@ -19,27 +22,38 @@
             border-radius: 8px;
             padding: 20px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-            max-height: 80vh;
+            max-height: 90vh;
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .chat-content {
+            flex: 1;
             overflow-y: auto;
+            margin-bottom: 1rem;
         }
 
         .msg {
             margin: 10px 0;
             display: flex;
+            flex-direction: column;
         }
 
-        .user {
-            justify-content: flex-end;
+        .msg.user {
+            align-items: flex-end;
         }
 
-        .bot {
-            justify-content: flex-start;
+        .msg.bot {
+            align-items: flex-start;
         }
 
         .msg-content {
             max-width: 70%;
             padding: 10px 15px;
             border-radius: 20px;
+            position: relative;
         }
 
         .user .msg-content {
@@ -49,50 +63,209 @@
         .bot .msg-content {
             background-color: #e2ffe2;
         }
+
+        .timestamp {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .typing-dots {
+            display: inline-block;
+            width: 24px;
+            text-align: left;
+        }
+
+        .typing-dots span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            margin-right: 2px;
+            background: #555;
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+
+            0%,
+            80%,
+            100% {
+                opacity: 0.2;
+            }
+
+            40% {
+                opacity: 1;
+            }
+        }
+
+        .suggestions {
+            margin-top: auto;
+            gap: 0.5rem;
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .suggestions button {
+            font-size: 0.85rem;
+        }
+
+        .info-line {
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .position-relative h4 {
+            margin: 0;
+            padding: 0;
+        }
+
+        .dark-mode {
+            background: #121212;
+            color: #e0e0e0;
+        }
+
+        .dark-mode .chat-box {
+            background: #1e1e1e;
+            color: #fff;
+        }
+
+        .dark-mode .user .msg-content {
+            background-color: #4a90e2;
+            color: white;
+        }
+
+        .dark-mode .bot .msg-content {
+            background-color: #5cb85c;
+            color: white;
+        }
+
+        @media (max-width: 576px) {
+            .msg-content {
+                max-width: 90%;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <div class="chat-box" id="chatBox">
-        <h4 class="text-center">🎓 EduBot – Education Counselor</h4>
-
-        {% for sender, message in chat %}
-        <div class="msg {{ sender }}">
-            <div class="msg-content">{{ message }}</div>
+    <div class="chat-box">
+        <div class="position-relative text-center mb-1">
+            <h4>🎓 EduBot – Education Counselor</h4>
+            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0" onclick="toggleTheme()"
+                title="Toggle Theme">
+                <i class="fas fa-adjust"></i>
+            </button>
         </div>
-        {% endfor %}
 
-        <div id="chat-messages"></div>
+        <div class="info-line">Ask about degrees, courses, admissions, or how to apply.</div>
 
-        <form class="mt-3 d-flex" onsubmit="return handleSubmit(event)">
-            <input id="userInput" class="form-control me-2" placeholder="Type a message..." autocomplete="off">
-            <button type="submit" class="btn btn-primary">Send</button>
+        <div class="chat-content" id="chatBox">
+            {% if not chat or chat|length == 0 %}
+            <div class="msg bot">
+                <div class="msg-content">Hi there! 👋 I'm EduBot. How can I help you today?</div>
+                <div class="timestamp">Bot · {{ current_time }}</div>
+            </div>
+            {% endif %}
+
+            {% for item in chat %}
+            {% set sender = item[0] %}
+            {% set message = item[1] %}
+            {% set timestamp = item[2] if item|length > 2 else '' %}
+            <div class="msg {{ sender }}">
+                <div class="msg-content">{{ message }}</div>
+                <div class="timestamp">{{ sender|capitalize }}{% if timestamp %} · {{ timestamp }}{% endif %}</div>
+            </div>
+            {% endfor %}
+            <div id="chat-messages"></div>
+        </div>
+
+        <form class="d-flex mb-2" onsubmit="return handleSubmit(event)">
+            <input id="userInput" class="form-control me-2" placeholder="Ask something..." autocomplete="off">
+            <button type="submit" class="btn btn-primary" title="Send"><i class="fas fa-paper-plane"></i></button>
         </form>
 
-        <button class="btn btn-outline-danger w-100 mt-2" onclick="resetChat()">Reset Chat</button>
+        <div class="suggestions">
+            <button class="btn btn-outline-secondary" onclick="quickSend('What courses do you offer?')">Courses</button>
+            <button class="btn btn-outline-secondary" onclick="quickSend('What will I learn in Computer Science?')">CS
+                Info</button>
+            <button class="btn btn-outline-secondary" onclick="quickSend('How can I enroll?')">Enroll</button>
+        </div>
 
+        <button class="btn btn-outline-danger w-100 mt-2" onclick="resetChat()">
+            <i class="fas fa-trash-alt me-1"></i> Reset Chat
+        </button>
     </div>
 
     <script>
+        let isResponding = false;
+
+        function getTimeNow() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function appendMessage(sender, message, showDots = false) {
+            const div = document.createElement("div");
+            div.className = `msg ${sender}`;
+            let contentHTML = `<div class="msg-content">`;
+
+            if (showDots) {
+                contentHTML += `<span class="typing-dots"><span></span><span></span><span></span></span>`;
+            } else {
+                contentHTML += message.replace(/\n/g, "<br>");
+            }
+
+            contentHTML += `</div><div class="timestamp">${sender.charAt(0).toUpperCase() + sender.slice(1)} · ${getTimeNow()}</div>`;
+            div.innerHTML = contentHTML;
+
+            document.getElementById("chat-messages").appendChild(div);
+
+            if (!showDots) {
+                setTimeout(() => {
+                    const box = document.getElementById("chatBox");
+                    box.scrollTop = box.scrollHeight;
+                }, 0);
+            }
+
+            return div;
+        }
+
         async function resetChat() {
-            const res = await fetch("/reset", {
-                method: "POST"
-            });
+            const res = await fetch("/reset", { method: "POST" });
             if (res.ok) {
-                document.getElementById("chat-messages").innerHTML = "";
+                sessionStorage.clear();
+                location.reload();
             }
         }
 
-        function appendMessage(sender, message) {
-            const div = document.createElement("div");
-            div.className = `msg ${sender}`;
-            div.innerHTML = `<div class="msg-content">${message}</div>`;
-            document.getElementById("chat-messages").appendChild(div);
-            document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
+        function disableInputs(disable) {
+            document.getElementById("userInput").disabled = disable;
+            document.querySelector("form button[type='submit']").disabled = disable;
+            document.querySelectorAll(".suggestions button").forEach(btn => btn.disabled = disable);
+
+            const resetBtn = document.querySelector("button.btn-outline-danger");
+            if (resetBtn) resetBtn.disabled = disable;
         }
 
         async function sendMessage(text) {
+            if (isResponding) return;
+            isResponding = true;
+
+            disableInputs(true);
             appendMessage("user", text);
+
+            const loading = appendMessage("bot", "", true);
 
             const res = await fetch("/ask", {
                 method: "POST",
@@ -101,11 +274,26 @@
             });
 
             const data = await res.json();
-            appendMessage("bot", data.reply);
+            const delay = Math.floor(Math.random() * 400) + 600;
+
+            setTimeout(() => {
+                loading.querySelector(".msg-content").innerHTML = data.reply.replace(/\n/g, "<br>");
+
+                setTimeout(() => {
+                    const box = document.getElementById("chatBox");
+                    box.scrollTop = box.scrollHeight;
+                }, 0);
+
+                isResponding = false;
+                disableInputs(false);
+                document.getElementById("userInput").focus();
+            }, delay);
         }
 
         function handleSubmit(event) {
             event.preventDefault();
+            if (isResponding) return;
+
             const input = document.getElementById("userInput");
             const text = input.value.trim();
             if (!text) return;
@@ -113,27 +301,21 @@
             input.value = "";
         }
 
-        async function teachBot() {
-            const q = document.getElementById("teachQ").value.trim();
-            const a = document.getElementById("teachA").value.trim();
-            if (!q || !a) return;
+        function quickSend(text) {
+            if (isResponding) return;
+            document.getElementById("userInput").value = text;
+            handleSubmit(new Event("submit"));
+        }
 
-            appendMessage("user", q);
-
-            const res = await fetch("/teach", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ question: q, answer: a })
-            });
-
-            const data = await res.json();
-            appendMessage("bot", data.reply);
-
-            document.getElementById("teachQ").value = "";
-            document.getElementById("teachA").value = "";
+        function toggleTheme() {
+            document.body.classList.toggle("dark-mode");
+            localStorage.setItem("darkMode", document.body.classList.contains("dark-mode") ? "on" : "off");
         }
 
         window.onload = function () {
+            if (localStorage.getItem("darkMode") === "on") {
+                document.body.classList.add("dark-mode");
+            }
             document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
         };
     </script>
